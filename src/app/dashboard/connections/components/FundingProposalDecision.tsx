@@ -50,7 +50,7 @@ export default function FundingProposalDecision({
 
       const { data: business, error: businessError } = await supabase
         .from("businesses")
-        .select("id, entrepreneur_id")
+        .select("id, Vendor_id")
         .eq("id", proposal.business_id)
         .single();
 
@@ -58,7 +58,7 @@ export default function FundingProposalDecision({
         throw new Error(businessError.message);
       }
 
-      if (business.entrepreneur_id !== user.id) {
+      if (business.Vendor_id !== user.id) {
         throw new Error(
           "You are not authorized to respond to this proposal."
         );
@@ -73,7 +73,7 @@ export default function FundingProposalDecision({
         .from("funding_proposals")
         .update({
           status: decision,
-          entrepreneur_response: response,
+          Vendor_response: response,
           responded_at: new Date().toISOString(),
         })
         .eq("id", proposalId);

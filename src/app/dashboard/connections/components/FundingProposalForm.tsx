@@ -235,7 +235,7 @@ export default function FundingProposalForm({
           id="message"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Write a message to the entrepreneur..."
+          placeholder="Write a message to the Vendor..."
           rows={4}
           className="mt-2 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
         />

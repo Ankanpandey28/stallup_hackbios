@@ -73,7 +73,7 @@ export async function PATCH(
 
     const { data: business, error: businessError } = await admin
       .from("businesses")
-      .select("id, business_name, entrepreneur_id, verification_status")
+      .select("id, business_name, Vendor_id, verification_status")
       .eq("id", businessId)
       .maybeSingle();
 
@@ -134,11 +134,11 @@ export async function PATCH(
       );
     }
 
-    // 6. Notify the entrepreneur after a successful update.
+    // 6. Notify the Vendor after a successful update.
     const approved = status === "verified";
 
     const notificationSent = await createNotification({
-      userId: business.entrepreneur_id,
+      userId: business.Vendor_id,
       type: approved ? "business_verified" : "business_rejected",
       title: approved ? "Business Verified" : "Business Rejected",
       message: approved

@@ -52,14 +52,14 @@ export async function PATCH(request: Request) {
     // Verify that the signed-in user owns the business.
     const { data: business, error: businessError } = await admin
       .from("businesses")
-      .select("id, entrepreneur_id, business_name")
+      .select("id, Vendor_id, business_name")
       .eq("id", connection.business_id)
       .single();
 
     if (
       businessError ||
       !business ||
-      business.entrepreneur_id !== user.id
+      business.Vendor_id !== user.id
     ) {
       return NextResponse.json(
         { error: "You cannot respond to this request." },
@@ -74,7 +74,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const entrepreneurResponse =
+    const VendorResponse =
       status === "accepted"
         ? "I accept your connection request and would be happy to discuss funding opportunities."
         : "Thank you for your interest. I am not accepting your connection request at this time.";
@@ -84,7 +84,7 @@ export async function PATCH(request: Request) {
       .from("connection_requests")
       .update({
         status,
-        entrepreneur_response: entrepreneurResponse,
+        Vendor_response: VendorResponse,
         responded_at: new Date().toISOString(),
       })
       .eq("id", requestId)
@@ -122,7 +122,7 @@ export async function PATCH(request: Request) {
       title: accepted
         ? "Connection Request Accepted"
         : "Connection Request Declined",
-      message: `${business.business_name}: the entrepreneur has ${
+      message: `${business.business_name}: the Vendor has ${
         accepted ? "accepted" : "declined"
       } your connection request.`,
       relatedId: connection.id,

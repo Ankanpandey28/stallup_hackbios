@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         .from("businesses")
         .select(`
           id,
-          entrepreneur_id,
+          Vendor_id,
           funding_required
         `)
         .eq("id", businessId)
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     // --------------------------------------------------
     // 4. Verify ownership
     // --------------------------------------------------
-    if (business.entrepreneur_id !== user.id) {
+    if (business.Vendor_id !== user.id) {
       return NextResponse.json(
         {
           error:

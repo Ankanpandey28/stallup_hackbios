@@ -53,7 +53,7 @@ if (contentType.includes("application/json")) {
         .from("businesses")
         .select(`
           id,
-          entrepreneur_id,
+          Vendor_id,
           monthly_revenue,
           monthly_expenses,
           funding_required
@@ -69,9 +69,9 @@ if (contentType.includes("application/json")) {
     }
 
     // --------------------------------------------------
-    // 4. Verify entrepreneur owns the business
+    // 4. Verify Vendor owns the business
     // --------------------------------------------------
-    if (business.entrepreneur_id !== user.id) {
+    if (business.Vendor_id !== user.id) {
       return NextResponse.json(
         {
           error:

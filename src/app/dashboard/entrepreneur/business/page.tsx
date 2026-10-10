@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
@@ -63,10 +63,15 @@ const states = [
 export default function BusinessRegistrationPage() {
   const [businessName, setBusinessName] = useState("");
   const [description, setDescription] = useState("");
-
+const [checkingBusiness, setCheckingBusiness] = useState(true);
+const [activeBusinessName, setActiveBusinessName] = useState("");
+const [accessCheckError, setAccessCheckError] = useState("");
   const [businessType, setBusinessType] = useState("");
   const [foodCategory, setFoodCategory] = useState("");
-
+ 
+const [identityFile, setIdentityFile] = useState<File | null>(null);
+const [foodLicenseFile, setFoodLicenseFile] = useState<File | null>(null);
+const [supportingFiles, setSupportingFiles] = useState<File[]>([]);
   const [city, setCity] = useState("");
   const [state, setState] = useState("Madhya Pradesh");
   const [country, setCountry] = useState("India");
@@ -89,7 +94,96 @@ export default function BusinessRegistrationPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  
+useEffect(() => {
+  let cancelled = false;
 
+  async function checkExistingBusiness() {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        if (!cancelled) {
+          setAccessCheckError(
+            "Your session has expired. Please log in again."
+          );
+        }
+        return;
+      }
+
+      const { data: profile, error: profileError } =
+        await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
+      
+if (
+  profileError ||
+  !profile ||
+  !["entrepreneur", "vendor"].includes(
+    String(profile.role ?? "").trim().toLowerCase()
+  )
+) {
+  setError(
+    "Only Vendor accounts can register a business."
+  );
+  setLoading(false);
+  return;
+}
+
+      const { data: business, error: businessError } =
+        await supabase
+          .from("businesses")
+          .select("id, business_name")
+          .eq("entrepreneur_id", user.id)
+          .is("archived_at", null)
+          .maybeSingle();
+
+      if (businessError) {
+        console.error(
+          "Failed to check existing business:",
+          businessError
+        );
+
+        if (!cancelled) {
+          setAccessCheckError(
+            "Unable to check your existing business. Please refresh the page and try again."
+          );
+        }
+        return;
+      }
+
+      if (!cancelled && business) {
+        setActiveBusinessName(business.business_name);
+      }
+    } catch (error) {
+      console.error("Business access check failed:", error);
+
+      if (!cancelled) {
+        setAccessCheckError(
+          "Unable to verify your registration status. Please refresh the page."
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setCheckingBusiness(false);
+      }
+    }
+  }
+
+  checkExistingBusiness();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
   ) {
@@ -137,7 +231,7 @@ export default function BusinessRegistrationPage() {
 
     const supabase = createClient();
 
-    // Get authenticated entrepreneur
+    // Get authenticated Vendor
     const {
       data: { user },
       error: userError,
@@ -159,23 +253,27 @@ export default function BusinessRegistrationPage() {
         .eq("id", user.id)
         .single();
 
-    if (
-      profileError ||
-      !profile ||
-      profile.role !== "entrepreneur"
-    ) {
-      setError(
-        "Only entrepreneur accounts can register a business."
-      );
-      setLoading(false);
-      return;
-    }
+    
+if (
+  profileError ||
+  !profile ||
+  !["entrepreneur", "vendor"].includes(
+    String(profile.role ?? "").trim().toLowerCase()
+  )
+) {
+  setError(
+    "Only Vendor accounts can register a business."
+  );
+
+  setLoading(false);
+  return;
+}
 
     // Insert business
     const { error: insertError } = await supabase
       .from("businesses")
       .insert({
-        entrepreneur_id: user.id,
+        Vendor_id: user.id,
 
         business_name: businessName.trim(),
 
@@ -206,16 +304,22 @@ export default function BusinessRegistrationPage() {
         is_active: true,
       });
 
+    
     if (insertError) {
       console.error(
         "Business registration error:",
         insertError
       );
 
-      setError(
-        insertError.message ||
-          "Unable to register your business."
-      );
+      if (insertError.code === "23505") {
+        setError(
+          "You already have an active business. Please return to your dashboard."
+        );
+      } else {
+        setError(
+          "Unable to register your business. Please try again."
+        );
+      }
 
       setLoading(false);
       return;
@@ -251,7 +355,7 @@ export default function BusinessRegistrationPage() {
           href="/dashboard/entrepreneur"
           className="text-sm font-medium text-blue-600 hover:text-blue-700"
         >
-          ← Back to Entrepreneur Dashboard
+          ← Back to Vendor Dashboard
         </Link>
 
         {/* Header */}
@@ -271,11 +375,48 @@ export default function BusinessRegistrationPage() {
           </p>
         </div>
 
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="mt-8 space-y-6"
-        >
+        
+        {checkingBusiness ? (
+          <div className="mt-8 rounded-2xl bg-white p-8 text-center shadow-sm">
+            <p className="text-gray-600">
+              Checking your business registration...
+            </p>
+          </div>
+        ) : accessCheckError ? (
+          <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-6">
+            <p className="font-medium text-red-700">
+              {accessCheckError}
+            </p>
+            <Link
+              href="/login"
+              className="mt-3 inline-block font-semibold text-blue-600 underline"
+            >
+              Go to Login
+            </Link>
+          </div>
+        ) : activeBusinessName ? (
+          <div className="mt-8 rounded-2xl border border-blue-100 bg-white p-8 shadow-sm">
+            <h2 className="text-xl font-bold text-gray-900">
+              You already have a registered business
+            </h2>
+            <p className="mt-3 text-gray-600">
+              Your active business is{" "}
+              <strong>{activeBusinessName}</strong>.
+              Each Vendor can have only one active
+              business at a time.
+            </p>
+            <Link
+              href="/dashboard/entrepreneur"
+              className="mt-5 inline-block rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Return to Dashboard
+            </Link>
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="mt-8 space-y-6"
+          >
 
           {/* Business Information */}
           <section className="rounded-2xl bg-white p-6 shadow-sm">
@@ -585,6 +726,78 @@ export default function BusinessRegistrationPage() {
 
           </section>
 
+{/* Financial Information */}
+<section className="rounded-2xl bg-white p-6 shadow-sm">
+  {/* Keep all your existing financial fields here:
+      Experience, Revenue, Expenses, Funding Required,
+      and Funding Purpose. */}
+</section>
+
+{/* ADD THE DOCUMENT UPLOAD SECTION HERE */}
+<section className="rounded-2xl bg-white p-6 shadow-sm">
+  <h2 className="text-xl font-bold text-gray-900">
+    Verification Documents
+  </h2>
+
+  <p className="mt-2 text-sm text-gray-600">
+    Upload your government ID proof. You can also upload
+    your FSSAI certificate and supporting documents.
+    Files must be PDF, JPEG, PNG or WebP, up to 10 MB each.
+  </p>
+
+  {/* Government ID */}
+  <div className="mt-5">
+    <label className="text-sm font-semibold text-gray-700">
+      Government ID Proof *
+    </label>
+
+    <input
+      type="file"
+      accept=".pdf,.jpg,.jpeg,.png,.webp"
+      required
+      onChange={(event) =>
+        setIdentityFile(event.target.files?.[0] ?? null)
+      }
+      className="mt-2 block w-full rounded-xl border border-gray-300 p-3 text-sm"
+    />
+  </div>
+
+  {/* FSSAI Certificate */}
+  <div className="mt-5">
+    <label className="text-sm font-semibold text-gray-700">
+      FSSAI Certificate
+    </label>
+
+    <input
+      type="file"
+      accept=".pdf,.jpg,.jpeg,.png,.webp"
+      onChange={(event) =>
+        setFoodLicenseFile(event.target.files?.[0] ?? null)
+      }
+      className="mt-2 block w-full rounded-xl border border-gray-300 p-3 text-sm"
+    />
+  </div>
+
+  {/* Supporting Documents */}
+  <div className="mt-5">
+    <label className="text-sm font-semibold text-gray-700">
+      Additional Supporting Documents
+    </label>
+
+    <input
+      type="file"
+      multiple
+      accept=".pdf,.jpg,.jpeg,.png,.webp"
+      onChange={(event) =>
+        setSupportingFiles(Array.from(event.target.files ?? []))
+      }
+      className="mt-2 block w-full rounded-xl border border-gray-300 p-3 text-sm"
+    />
+  </div>
+</section>
+
+{/* Keep your existing "What happens after registration?" section here */}
+
           {/* Verification information */}
           <section className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
 
@@ -647,10 +860,10 @@ export default function BusinessRegistrationPage() {
               </p>
 
               <Link
-                href="/dashboard/entrepreneur"
+                href="/dashboard/Entrepreneur"
                 className="mt-3 inline-block text-sm font-semibold text-green-700 underline"
               >
-                Go to Entrepreneur Dashboard →
+                Go to Vendor Dashboard →
               </Link>
             </div>
           )}
@@ -659,7 +872,7 @@ export default function BusinessRegistrationPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
 
             <Link
-              href="/dashboard/entrepreneur"
+              href="/dashboard/Vendor"
               className="rounded-xl border border-gray-300 px-6 py-3 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
               Cancel
@@ -678,6 +891,7 @@ export default function BusinessRegistrationPage() {
           </div>
 
         </form>
+        )}
       </div>
     </main>
   );

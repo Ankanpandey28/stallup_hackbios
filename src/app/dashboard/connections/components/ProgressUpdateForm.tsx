@@ -51,7 +51,7 @@ export default function ProgressUpdateForm({
 
       const { data: business, error: businessError } = await supabase
         .from("businesses")
-        .select("id, entrepreneur_id")
+        .select("id, Vendor_id")
         .eq("id", businessId)
         .single();
 
@@ -59,7 +59,7 @@ export default function ProgressUpdateForm({
         throw new Error(businessError.message);
       }
 
-      if (business.entrepreneur_id !== user.id) {
+      if (business.Vendor_id !== user.id) {
         throw new Error(
           "You are not authorized to add progress updates."
         );

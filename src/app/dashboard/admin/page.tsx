@@ -57,7 +57,7 @@ const [
   const { data: businesses, error } = await supabase
     .from("businesses")
     .select(
-      "id, entrepreneur_id, business_name, description, business_type, food_category, city, state, country, verification_status, created_at, monthly_revenue, monthly_expenses, funding_required, funding_purpose"
+      "id, Vendor_id, business_name, description, business_type, food_category, city, state, country, verification_status, created_at, monthly_revenue, monthly_expenses, funding_required, funding_purpose"
     )
     .in("verification_status", ["pending", "under_review"])
     .order("created_at", { ascending: true });
@@ -67,7 +67,7 @@ const [
   }
 
   const businessList = businesses ?? [];
-  const ownerIds = [...new Set(businessList.map((b) => b.entrepreneur_id))];
+  const ownerIds = [...new Set(businessList.map((b) => b.Vendor_id))];
 
   let owners: { id: string; full_name: string | null }[] = [];
 
@@ -188,7 +188,7 @@ const [
                   <div>
                     <h2 className="text-xl font-bold">{business.business_name}</h2>
                     <p className="mt-1 text-sm text-slate-600">
-                      Owner: {ownerName(business.entrepreneur_id)}
+                      Owner: {ownerName(business.Vendor_id)}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
                       {[business.city, business.state, business.country]

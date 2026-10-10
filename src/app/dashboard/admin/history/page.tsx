@@ -36,7 +36,7 @@ export default async function AdminVerificationHistoryPage() {
   const { data: businesses, error } = await admin
     .from("businesses")
     .select(
-      "id, business_name, entrepreneur_id, verification_status, verification_notes, verified_at, verified_by, created_at"
+      "id, business_name, Vendor_id, verification_status, verification_notes, verified_at, verified_by, created_at"
     )
     .in("verification_status", ["verified", "rejected"])
     .order("verified_at", { ascending: false });
@@ -50,7 +50,7 @@ export default async function AdminVerificationHistoryPage() {
   const profileIds = [
     ...new Set(
       rows.flatMap((business) =>
-        [business.entrepreneur_id, business.verified_by].filter(
+        [business.Vendor_id, business.verified_by].filter(
           (id): id is string => Boolean(id)
         )
       )
@@ -76,9 +76,9 @@ export default async function AdminVerificationHistoryPage() {
   const records = rows.map((business) => ({
     id: business.id,
     business_name: business.business_name || "Unnamed business",
-    entrepreneur_id: business.entrepreneur_id,
+    Vendor_id: business.Vendor_id,
     owner_name:
-      nameById.get(business.entrepreneur_id) || "Unknown owner",
+      nameById.get(business.Vendor_id) || "Unknown owner",
     verification_status: business.verification_status as
       | "verified"
       | "rejected",

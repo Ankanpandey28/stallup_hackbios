@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
 
         <p className="mt-2 text-sm text-gray-500">
           Enter the email address associated with your
-          entrepreneur account.
+          Vendor account.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">

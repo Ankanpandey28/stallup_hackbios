@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const { data: business, error: businessError } = await supabase
       .from("businesses")
       .select(
-        "id, business_name, entrepreneur_id, verification_status, is_active"
+        "id, business_name, Vendor_id, verification_status, is_active"
       )
       .eq("id", businessId)
       .maybeSingle();
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (business.entrepreneur_id === user.id) {
+    if (business.Vendor_id === user.id) {
       return NextResponse.json(
         { error: "You cannot request a connection with your own business." },
         { status: 403 }
@@ -169,9 +169,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // 7. Notify the entrepreneur.
+    // 7. Notify the Vendor.
     const notificationCreated = await createNotification({
-      userId: business.entrepreneur_id,
+      userId: business.Vendor_id,
       type: "connection_request",
       title: "New Connection Request",
       message: `${profile.full_name || "A funder"} wants to connect with your business.`,
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
 
     if (!notificationCreated) {
       console.error(
-        "Connection request was created, but the entrepreneur notification failed."
+        "Connection request was created, but the Vendor notification failed."
       );
     }
 

@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 type HistoryRecord = {
   id: string;
   business_name: string;
-  entrepreneur_id: string;
+  Vendor_id: string;
   owner_name: string;
   verification_status: "verified" | "rejected";
   verification_notes: string | null;

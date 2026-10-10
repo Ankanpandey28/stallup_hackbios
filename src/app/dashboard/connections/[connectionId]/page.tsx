@@ -39,7 +39,7 @@ export default async function ConnectedWorkspace({
         business_id,
         status,
         funder_message,
-        entrepreneur_response,
+        Vendor_response,
         requested_at,
         responded_at
       `)
@@ -72,7 +72,7 @@ export default async function ConnectedWorkspace({
       .from("businesses")
       .select(`
         id,
-        entrepreneur_id,
+        Vendor_id,
         business_name,
         description,
         business_type,
@@ -97,9 +97,9 @@ export default async function ConnectedWorkspace({
   // --------------------------------------------------
   // 6. Make sure user is actually part of the connection
   // --------------------------------------------------
-  const isEntrepreneur = business.entrepreneur_id === user.id;
+  const isVendor = business.Vendor_id === user.id;
 
-  if (!isFunder && !isEntrepreneur) {
+  if (!isFunder && !isVendor) {
     redirect("/dashboard");
   }
 
@@ -142,7 +142,7 @@ const { data: analysis } = await supabase
       proposed_terms,
       message,
       status,
-      entrepreneur_response,
+      Vendor_response,
       proposed_at,
       responded_at
     `)
@@ -703,7 +703,7 @@ if (analysis) {
                 </div>
               )}
 
-              {isEntrepreneur && proposal.status === "pending" && (
+              {isVendor && proposal.status === "pending" && (
   <FundingProposalDecision proposalId={proposal.id} />
 )}
             </div>
@@ -721,7 +721,7 @@ if (analysis) {
             partner updated.
           </p>
 
-          {isEntrepreneur && proposal?.status === "accepted" && (
+          {isVendor && proposal?.status === "accepted" && (
             <ProgressUpdateForm
               businessId={business.id}
               connectionRequestId={connection.id}

@@ -8,7 +8,7 @@ import ConnectionRequests from "./ConnectionRequests";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function EntrepreneurDashboard() {
+export default async function VendorDashboard() {
   const supabase = await createClient();
 
   // Get logged-in user
@@ -27,15 +27,19 @@ export default async function EntrepreneurDashboard() {
     .eq("id", user.id)
     .single();
 
-  if (
-    profileError ||
-    !profile ||
-    profile.role !== "entrepreneur"
-  ) {
-    redirect("/dashboard");
-  }
+  
+if (profileError || !profile) {
+  console.error("Failed to load profile:", profileError);
+  redirect("/login");
+}
 
-  // Get entrepreneur's businesses
+const role = String(profile.role ?? "").trim().toLowerCase();
+
+if (role !== "vendor" && role !== "entrepreneur") {
+  redirect("/dashboard");
+}
+
+  // Get Vendor's businesses
   const { data: businesses, error: businessesError } =
     await supabase
       .from("businesses")
@@ -57,10 +61,14 @@ export default async function EntrepreneurDashboard() {
         verification_notes,
         is_active,
         created_at
-        `
-      )
-      .eq("entrepreneur_id", user.id)
-      .order("created_at", { ascending: false });
+        
+      `)
+      
+  .eq("entrepreneur_id", user.id)
+  .is("archived_at", null)
+  .order("created_at", { ascending: false });
+
+
 
   if (businessesError) {
     console.error(
@@ -155,7 +163,7 @@ const formattedConnectionRequests = await Promise.all(
             </p>
 
             <h1 className="mt-2 text-3xl font-bold text-gray-900">
-              Welcome, {profile.full_name || "Entrepreneur"} 👋
+              Welcome, {profile.full_name || "Vendor"} 👋
             </h1>
 
             <p className="mt-2 text-gray-600">
@@ -165,12 +173,19 @@ const formattedConnectionRequests = await Promise.all(
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-  <Link
-    href="/dashboard/entrepreneur/business"
-    className="rounded-xl bg-blue-600 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-blue-700"
-  >
-    + Register Business
-  </Link>
+  {businessList.length === 0 && (
+
+<Link
+  href="/dashboard/entrepreneur/business"
+  className="rounded-xl border border-blue-600 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+>
+  Register Business
+</Link>
+)}
+
+
+
+
 
   <div className="flex items-center gap-3">
   <NotificationBell />
@@ -241,12 +256,15 @@ const formattedConnectionRequests = await Promise.all(
               </p>
             </div>
 
-            <Link
-              href="/dashboard/entrepreneur/business"
-              className="rounded-xl border border-blue-600 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
-            >
-              Register Another Business
-            </Link>
+            
+{businesses?.length === 0 && (
+  <Link
+    href="/dashboard/entrepreneur/business"
+    className="inline-flex rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+  >
+    Register Business
+  </Link>
+)}
           </div>
 
           {businessList.length === 0 ? (
